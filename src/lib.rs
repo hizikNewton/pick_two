@@ -1,14 +1,30 @@
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer};
+use reqwest::Error;
 
 async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
 }
 
+async fn crawl() -> HttpResponse {
+    log::info!("we are crawling");
+    let response = reqwest::get("https://ng.soccerway.com/")
+        .await
+        .unwrap()
+        .text()
+        .await;
+    log::info!("{:?}", response);
+    HttpResponse::Ok().finish()
+}
+
 pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
-    let server = HttpServer::new(|| App::new().route("/health_check", web::get().to(health_check)))
-        .listen(listener)?
-        .run();
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/health_check", web::get().to(health_check))
+            .route("/get_matches", web::get().to(crawl))
+    })
+    .listen(listener)?
+    .run();
     Ok(server)
 }
