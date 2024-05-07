@@ -1,7 +1,6 @@
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer};
-use reqwest::Error;
 
 async fn health_check() -> HttpResponse {
     HttpResponse::Ok().finish()
@@ -9,6 +8,7 @@ async fn health_check() -> HttpResponse {
 
 async fn crawl() -> HttpResponse {
     log::info!("we are crawling");
+    proxy::client::client();
     let response = reqwest::get("https://ng.soccerway.com/")
         .await
         .unwrap()
