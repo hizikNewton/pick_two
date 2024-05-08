@@ -9,8 +9,12 @@ async fn health_check() -> HttpResponse {
 }
 
 async fn crawl() -> HttpResponse {
+    tokio::task::spawn_blocking(|| {
+        let _ = client::proxy::client("https://ng.soccerway.com/");
+    })
+    .await
+    .expect("Task panicked");
     log::info!("we are crawling");
-    let _ = client::proxy::client("https://ng.soccerway.com/");
     /*  let response = reqwest::get("https://ng.soccerway.com/")
         .await
         .unwrap()
