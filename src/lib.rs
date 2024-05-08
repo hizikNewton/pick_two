@@ -1,3 +1,5 @@
+pub mod proxy;
+use proxy::client;
 use std::net::TcpListener;
 
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer};
@@ -8,13 +10,13 @@ async fn health_check() -> HttpResponse {
 
 async fn crawl() -> HttpResponse {
     log::info!("we are crawling");
-    proxy::client::client();
-    let response = reqwest::get("https://ng.soccerway.com/")
+    let _ = client::proxy::client("https://ng.soccerway.com/");
+    /*  let response = reqwest::get("https://ng.soccerway.com/")
         .await
         .unwrap()
         .text()
         .await;
-    log::info!("{:?}", response);
+    log::info!("{:?}", response); */
     HttpResponse::Ok().finish()
 }
 

@@ -4,12 +4,12 @@ pub mod proxy {
     use regex::Regex;
 
     #[tokio::main]
-    pub async fn client() -> Result<()> {
+    pub async fn client(url: &str) -> Result<()> {
         let connector = Connector::new(None);
 
         // create the HTTP session
-        let peer_addr = "1.1.1.1:443";
-        let mut peer = HttpPeer::new(peer_addr, true, "one.one.one.one".into());
+        //let peer_addr = "1.1.1.1:443";
+        let mut peer = HttpPeer::new(url, true, "one.one.one.one".into());
         peer.options.set_http_version(2, 1);
         let (mut http, _reused) = connector.get_http_session(&peer).await?;
 
