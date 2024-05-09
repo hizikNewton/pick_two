@@ -9,18 +9,19 @@ async fn health_check() -> HttpResponse {
 }
 
 async fn crawl() -> HttpResponse {
-    tokio::task::spawn_blocking(|| {
-        let _ = client::proxy::client("https://ng.soccerway.com/");
-    })
-    .await
-    .expect("Task panicked");
-    log::info!("we are crawling");
-    /*  let response = reqwest::get("https://ng.soccerway.com/")
+    /*   tokio::task::spawn_blocking(|| {
+        })
+        .await
+        .expect("Task panicked");let response = reqwest::get("https://ng.soccerway.com/")
         .await
         .unwrap()
         .text()
         .await;
-    log::info!("{:?}", response); */
+    log::info!("{:?}", response);
+    */
+
+    let _ = client::proxy::client().await;
+
     HttpResponse::Ok().finish()
 }
 

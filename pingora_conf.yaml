@@ -1,0 +1,8 @@
+version: 1
+client_bind_to_ipv4:
+  - 127.0.0.1
+ca_file: keys/server.crt
+daemon: true
+threads: 1
+work_stealing: true
+upstream_keepalive_pool_size: 128

@@ -1,15 +1,23 @@
 pub mod proxy {
-    use pingora::{connectors::http::Connector, prelude::*};
+
+    use pingora::{
+        connectors::{http::Connector, ConnectorOptions},
+        prelude::*,
+        server::configuration::ServerConf,
+    };
     use pingora_http::RequestHeader;
     use regex::Regex;
 
-    #[tokio::main]
-    pub async fn client(url: &str) -> Result<()> {
-        let connector = Connector::new(None);
+    pub async fn client() -> Result<()> {
+        let server_conf = ServerConf::load_from_yaml("pingora_conf.yaml").unwrap();
+        let connector = Connector::new(Some(ConnectorOptions::from_server_conf(&server_conf)));
 
         // create the HTTP session
+        let peer_addr = "1.1.1.1:443";
         //let peer_addr = "1.1.1.1:443";
-        let mut peer = HttpPeer::new(url, true, "one.one.one.one".into());
+        let mut peer = HttpPeer::new(peer_addr, true, "one.one.one.one".into());
+
+        log::info!("we are crawling ,{:?}", peer.client_cert_key);
         peer.options.set_http_version(2, 1);
         let (mut http, _reused) = connector.get_http_session(&peer).await?;
 
@@ -32,6 +40,7 @@ pub mod proxy {
         // collect the response body
         let mut response_body = String::new();
         while let Some(chunk) = http.read_response_body().await? {
+            println!("smsm {response_body}");
             response_body.push_str(&String::from_utf8_lossy(&chunk));
         }
 
