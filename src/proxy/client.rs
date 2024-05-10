@@ -4,6 +4,7 @@ pub mod proxy {
         connectors::{http::Connector, ConnectorOptions},
         prelude::*,
         server::configuration::ServerConf,
+        upstreams::peer::Peer,
     };
     use pingora_http::RequestHeader;
     use regex::Regex;
@@ -17,7 +18,7 @@ pub mod proxy {
         //let peer_addr = "1.1.1.1:443";
         let mut peer = HttpPeer::new(peer_addr, true, "one.one.one.one".into());
 
-        log::info!("we are crawling ,{:?}", peer.client_cert_key);
+        log::info!("we are crawling ,{:?}", peer.address());
         peer.options.set_http_version(2, 1);
         let (mut http, _reused) = connector.get_http_session(&peer).await?;
 

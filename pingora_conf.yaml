@@ -6,3 +6,5 @@ daemon: true
 threads: 1
 work_stealing: true
 upstream_keepalive_pool_size: 128
+upstream_connect_offload_threadpools: 1
+upstream_connect_offload_thread_per_pool: 2
