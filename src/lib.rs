@@ -27,8 +27,12 @@ pub fn parse_me() -> std::io::Result<()> {
     let livescore_selector = Selector::parse("div.livescores-comp status-fixture").unwrap();
     for i in document.select(&livescore_selector) {
         let h1_selector = Selector::parse("h1").unwrap();
-        let a_selector = Selector::parse("a").unwrap();
-        //let country_selector = Selector::parse("i.")
+        for links in i.select(&h1_selector) {
+            let a_selector = Selector::parse("a").unwrap();
+            for link_element in links.select(&a_selector) {
+                log::debug!("{}", link_element.value().name);
+            }
+        }
         log::debug!("{}", i.inner_html());
     }
 
