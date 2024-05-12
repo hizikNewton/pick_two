@@ -17,6 +17,7 @@ async-trait = "0.1.42"
 pingora-http = "0.1.1"
 regex = "1.10.4"
 http = "1.1.0"
+scraper = "0.19.0"
 
 [lib]
 path = "src/lib.rs"
