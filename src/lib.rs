@@ -26,6 +26,8 @@ pub fn parse_me() -> std::io::Result<()> {
     let document = Html::parse_document(&html);
     let livescore_selector = Selector::parse("div.livescores-comp status-fixture").unwrap();
     for i in document.select(&livescore_selector) {
+        let h1_selector = Selector::parse("h1").unwrap();
+        let a_selector = Selector::parse("a").unwrap();
         //let country_selector = Selector::parse("i.")
         log::debug!("{}", i.inner_html());
     }
