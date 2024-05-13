@@ -34,9 +34,10 @@ pub mod parse_details {
             for mw in self.document.select(&last_five) {
                 let container = Html::parse_fragment(&mw.inner_html());
                 let a_selector = Selector::parse("a").unwrap();
-                let x = container.select(&a_selector).unwrap();
-                println!("{:?}", x.text().collect::<Vec<_>>());
-                //println!("{:?}", mw.inner_html());
+
+                for mt in container.select(&a_selector) {
+                    println!("{:?}", mt.text());
+                }
             }
         }
     }
