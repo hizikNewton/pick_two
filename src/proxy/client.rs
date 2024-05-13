@@ -4,11 +4,7 @@ pub mod proxy {
     use pingora_http::RequestHeader;
     use regex::Regex;
 
-    pub async fn client() -> Result<String> {
-        /*  let server_conf = ServerConf::load_from_yaml("pingora_conf.yaml").unwrap();
-               let connector = Connector::new(Some(ConnectorOptions::from_server_conf(&server_conf)));
-        */
-
+    pub async fn client(url: String) -> Result<String> {
         let connector = Connector::new(None);
         // create the HTTP session
         let peer_addr = "23.214.139.102:443";
@@ -20,7 +16,7 @@ pub mod proxy {
         assert!(!reused);
 
         // perform a GET request
-        let mut new_request = RequestHeader::build("GET", b"/", None)?;
+        let mut new_request = RequestHeader::build("GET", format!("{}", url).as_bytes(), None)?;
         new_request.insert_header(
             "User-Agent",
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ",
