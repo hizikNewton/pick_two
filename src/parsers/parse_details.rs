@@ -64,8 +64,15 @@ pub mod parse_details {
                 selector = "even.highlight".to_string();
             };
             let team_selector: Selector = Selector::parse(&format!("tr.{selector}")).unwrap();
-            let frag = self.document.select(&team_selector);
-            println!("fraaag {frag:?}");
+            if let Some(frag) = self
+                .document
+                .select(&team_selector)
+                .next()
+                .unwrap()
+                .first_child()
+            {
+                println!("fraaag {:?}", frag);
+            }
         }
     }
 
