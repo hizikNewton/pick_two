@@ -8,32 +8,35 @@ pub mod parse_details {
         document: &'a Html,
         has_three_win: Option<bool>,
         is_within_unit: Option<bool>,
+        at_least_12_match_played: Option<bool>,
         is_popular: Option<bool>,
         consider_straight_win: Option<bool>,
-        game_difference: Option<i32>,
         win_flag_diff: Option<i32>,
-        game_data: GameData<'a>,
+        game_data: &'a GameData,
+    }
+
+    pub enum MyError {
+        UpTo10MatchIsPlayed,
+        DoesNotHaveThreeWin,
+        IsNotWithinUnit,
+        TeamBetweenIsLessThanFour,
     }
 
     impl<'a> GameRule<'a> {
-        pub fn new(document: &'a Html) -> Self {
-            let gdb = GameDataBuilder::new(document)
-                .set_team_name()
-                .set_last_five()
-                .build();
+        pub fn new(document: &'a Html, game_data: &'a GameData) -> Self {
             GameRule {
                 document,
                 has_three_win: None,
                 is_within_unit: None,
+                at_least_12_match_played: None,
                 is_popular: None,
                 consider_straight_win: None,
-                game_difference: None,
                 win_flag_diff: None,
-                game_data: gdb,
+                game_data,
             }
         }
 
-        pub fn has_three_win(&mut self) {
+        pub fn has_three_win(&mut self) -> Result<&mut Self, MyError> {
             let mut scan: Vec<usize> = Vec::new();
             if let Some(team_play) = &self.game_data.last_five {
                 for (idx, mw) in team_play.iter().enumerate() {
@@ -49,30 +52,98 @@ pub mod parse_details {
                 let team = scan.first().unwrap();
                 self.game_data.selected_team = Some(*team + 1);
                 self.has_three_win = Some(true);
+                Ok(self)
             } else {
-                self.has_three_win = Some(false);
+                Err(MyError::DoesNotHaveThreeWin)
             }
-
-            println!("{:?}", scan);
         }
 
-        pub fn is_within_unit(self) {
+        pub fn is_within_unit(&mut self) -> Result<&mut Self, MyError> {
             let selector;
             if self.game_data.selected_team.unwrap() % 2 == 0 {
                 selector = "odd.highlight".to_string();
             } else {
                 selector = "even.highlight".to_string();
             };
+
             let team_selector: Selector = Selector::parse(&format!("tr.{selector}")).unwrap();
-            if let Some(frag) = self
-                .document
-                .select(&team_selector)
-                .next()
-                .unwrap()
-                .first_child()
-            {
-                println!("fraaag {:?}", frag);
+
+            let tr = self.document.select(&team_selector).next().unwrap();
+
+            let rank_selector: Selector = Selector::parse("td.rank").unwrap();
+            if let Some(rank) = tr.select(&rank_selector).next() {
+                let rank_val: i8 = rank.inner_html().parse().unwrap();
+                if rank_val < 9 {
+                    self.is_within_unit = Some(true);
+                    return Ok(self);
+                }
             }
+            self.is_within_unit = Some(false);
+            Err(MyError::IsNotWithinUnit)
+        }
+
+        pub fn team_difference_is_atleast_four(&mut self) -> Result<&mut Self, MyError> {
+            let selector = "highlight";
+            let team_selector: Selector = Selector::parse(&format!("tr.{selector}")).unwrap();
+            let mut position = vec![];
+            for tr in self.document.select(&team_selector) {
+                let rank_selector: Selector = Selector::parse("td.rank").unwrap();
+                for rank in tr.select(&rank_selector) {
+                    let rank_val: i8 = rank.inner_html().parse().unwrap();
+                    position.push(rank_val)
+                }
+            }
+            if (position[1] - position[0]) > 3 {
+                return Ok(self);
+            } else {
+                return Err(MyError::TeamBetweenIsLessThanFour);
+            }
+        }
+
+        pub fn at_least_12_match_played(&mut self) -> Result<&mut Self, MyError> {
+            let selector;
+            if self.game_data.selected_team.unwrap() % 2 == 0 {
+                selector = "odd.highlight".to_string();
+            } else {
+                selector = "even.highlight".to_string();
+            };
+
+            let team_selector: Selector = Selector::parse(&format!("tr.{selector}")).unwrap();
+
+            let tr = self.document.select(&team_selector).next().unwrap();
+            //let frag = Html::parse_fragment(&tr);
+
+            let match_played_selector: Selector = Selector::parse("td.number.total.mp").unwrap();
+            if let Some(mp) = tr.select(&match_played_selector).next() {
+                let match_played: i8 = mp.inner_html().parse().unwrap();
+                println!("match played {match_played}");
+                if match_played > 12 {
+                    self.at_least_12_match_played = Some(true);
+                }
+            }
+        }
+
+        pub fn award_point(mut self) {
+            let team_selector: Selector = Selector::parse(&format!("tr.highlight")).unwrap();
+            let mut points = Vec::new();
+            for tr in self.document.select(&team_selector) {
+                let point_selector: Selector = Selector::parse("td.number.points").unwrap();
+                if let Some(point) = tr.select(&point_selector).next() {
+                    let point_val: i8 = point.inner_html().parse().unwrap();
+                    points.push(point_val);
+                }
+            }
+            let point = points.first().unwrap() - points.last().unwrap();
+            let pred = match point {
+                9..=12 => "ov 0.5",
+                13..=16 => "ABorGG",
+                17..=20 => "ABor2.5",
+                21..=24 => "ov 1.5",
+                25..=28 => "Draw/A|B",
+                29..=32 => "A|B",
+                _ => "A|B|ov 3.5",
+            };
+            self.game_data.prediction = Some(pred.to_string());
         }
     }
 
@@ -80,6 +151,7 @@ pub mod parse_details {
         team_names: Option<Vec<&'a str>>,
         last_five: Option<Vec<String>>,
         selected_team: Option<usize>,
+        prediction: Option<String>,
         document: &'a Html,
     }
 
@@ -87,6 +159,7 @@ pub mod parse_details {
         team_names: Option<Vec<&'a str>>,
         last_five: Option<Vec<String>>,
         selected_team: Option<usize>,
+        prediction: Option<String>,
         document: &'a Html,
     }
 
@@ -96,6 +169,7 @@ pub mod parse_details {
                 team_names: None,
                 last_five: None,
                 selected_team: None,
+                prediction: None,
                 document,
             }
         }
@@ -140,6 +214,7 @@ pub mod parse_details {
                 last_five: self.last_five,
                 document: &self.document,
                 selected_team: self.selected_team,
+                prediction: self.prediction,
             };
 
             game_data
@@ -154,10 +229,14 @@ pub mod parse_details {
             log::debug!("succesfully read to string");
         };
         let document = Html::parse_document(&html);
-        let mut game_rule = GameRule::new(&document);
-        game_rule.has_three_win();
+        let game_data = GameDataBuilder::new(&document)
+            .set_team_name()
+            .set_last_five()
+            .build();
+        let mut game_rule = GameRule::new(&document, &game_data);
+        game_rule.has_three_win().and_then(|gr| gr.is_within_unit());
 
-        println!("yooo {:?}", game_rule.is_within_unit());
+        println!("yooo {:?}", game_rule.game_data.prediction);
         Ok(())
     }
 }
