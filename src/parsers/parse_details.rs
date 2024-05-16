@@ -12,14 +12,15 @@ pub mod parse_details {
         is_popular: Option<bool>,
         consider_straight_win: Option<bool>,
         win_flag_diff: Option<i32>,
-        game_data: &'a GameData,
+        game_data: &'a GameData<'a>,
     }
 
     pub enum MyError {
-        UpTo10MatchIsPlayed,
+        NotUpTo10MatchPlayed,
         DoesNotHaveThreeWin,
         IsNotWithinUnit,
         TeamBetweenIsLessThanFour,
+        UnWrapNone,
     }
 
     impl<'a> GameRule<'a> {
@@ -119,7 +120,12 @@ pub mod parse_details {
                 println!("match played {match_played}");
                 if match_played > 12 {
                     self.at_least_12_match_played = Some(true);
+                    Ok(self)
+                } else {
+                    Err(MyError::NotUpTo10MatchPlayed)
                 }
+            } else {
+                Err(MyError::NotUpTo10MatchPlayed)
             }
         }
 
